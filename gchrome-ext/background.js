@@ -8,7 +8,7 @@ chrome.runtime.onInstalled.addListener(function () {
                 // That fires when a page's URL contains a 'g' ...
                 conditions: [
                     new chrome.declarativeContent.PageStateMatcher({
-                        pageUrl: { urlContains: 'www.bbc.com/news/' },
+                        pageUrl: { urlContains: 'g' },
                     })
                 ],
                 // And shows the extension's page action.
