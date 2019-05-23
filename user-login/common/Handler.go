@@ -53,7 +53,13 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
     uName := r.FormValue("username")
     email := r.FormValue("email")
     pwd := r.FormValue("password")
-    confirmPwd := r.FormValue("confirmPassword")
+	confirmPwd := r.FormValue("confirmPassword")
+	
+	fmt.Println(uName)
+	fmt.Println(email)
+	fmt.Println(pwd)
+	fmt.Println(confirmPwd)
+	
  
     _uName, _email, _pwd, _confirmPwd := false, false, false, false
     _uName = !helpers.IsEmpty(uName)
