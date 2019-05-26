@@ -2,6 +2,7 @@ package app
 
 import (
 	"database/sql"
+	"fmt"
 )
 
 type news struct {
@@ -59,24 +60,25 @@ type account struct {
 	Email string `json:"email"`
 }
 
-func (u *account) getNews(db *sql.DB) error {
+func (u *account) getAccount(db *sql.DB) error {
 	return db.QueryRow("SELECT username, email FROM account WHERE username=$1", u.Username).Scan(&u.Password, &u.Email)
 }
 
-func (u *account) updateNews(db *sql.DB) error {
+func (u *account) updateAccount(db *sql.DB) error {
 	_, err := db.Exec("UPDATE account SET password=$1, email=$2 WHERE username=$3", u.Password, u.Email, u.Username)
 	return err
 }
 
-func (u *account) deleteNews(db *sql.DB) error {
+func (u *account) deleteAccount(db *sql.DB) error {
 	_, err := db.Exec("DELETE FROM account WHERE username=$1", u.Username)
 	return err
 }
 
-func (u *account) createNews(db *sql.DB) error {
+func (u *account) createAccount(db *sql.DB) error {
 	// postgres doesn't return the last inserted Username so this is the workaround
+	fmt.Println("here")
 	err := db.QueryRow(
-		"INSERT INTO account(username, password, email) VALUES($1, $2) RETURNING username",
-		u.Password, u.Email).Scan(&u.Username)
+		"INSERT INTO account(username, password, email) VALUES($1, $2, $3) RETURNING username",
+		u.Username, u.Password, u.Email).Scan(&u.Username)
 	return err
 }

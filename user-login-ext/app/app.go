@@ -11,10 +11,11 @@ import (
 	"log"
 
 	helpers "../helpers"
-    repos "../repos"
  
 	"github.com/gorilla/securecookie"
-	"text/template"
+    "text/template"
+    
+    "reflect"
 )
  
 //App struct
@@ -114,7 +115,7 @@ func (a *App) LoginHandler(response http.ResponseWriter, request *http.Request) 
     redirectTarget := "/"
     if !helpers.IsEmpty(name) && !helpers.IsEmpty(pass) {
         // Database check for user data!
-        _userIsValid := repos.UserIsValid(name, pass)
+        _userIsValid := a.UserIsValid(name, pass)
  
         if _userIsValid {
             a.SetCookie(name, response)
@@ -155,12 +156,28 @@ func (a *App) RegisterHandler(w http.ResponseWriter, r *http.Request) {
  
     if _uName && _email && _pwd && _confirmPwd {
         fmt.Fprintln(w, "Username for Register : ", uName)
+        fmt.Fprintln(w, "Username type : ", reflect.TypeOf(uName))        
         fmt.Fprintln(w, "Email for Register : ", email)
+        fmt.Fprintln(w, "Email type : ", reflect.TypeOf(email))       
         fmt.Fprintln(w, "Password for Register : ", pwd)
+        fmt.Fprintln(w, "Password type : ", reflect.TypeOf(pwd))       
         fmt.Fprintln(w, "ConfirmPassword for Register : ", confirmPwd)
+        fmt.Fprintln(w, "ConfirmPassword type : ", reflect.TypeOf(confirmPwd))       
+        if pwd == confirmPwd {
+            n := account{ Username:uName, Password:pwd, Email:email}
+            if err := n.createAccount(a.DB); err != nil {
+                fmt.Println("I'm here with error!")                            
+                return
+            }
+            fmt.Fprintln(w, "I'm here!")            
+        } else {
+            fmt.Fprintln(w, "Password not match!")
+        }
     } else {
         fmt.Fprintln(w, "This fields can not be blank!")
     }
+
+
 }
  
 // for GET
@@ -214,4 +231,33 @@ func (a *App) GetUserName(request *http.Request) (userName string) {
         }
     }
     return userName
+}
+
+// Check User Exists
+
+func (a *App) UserIsValid(uName, pwd string) bool {
+    // DB simulation
+
+    n := account{Username: uName}
+	if err := n.getAccount(a.DB); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			fmt.Println("no this user");
+		default:
+			fmt.Println("no this user");
+		}
+		return false
+	}
+
+	fmt.Printf("%+v\n", n);
+
+    _uName, _pwd, _isValid := "changchaishi", "1234", false
+ 
+    if uName == _uName && pwd == _pwd {
+        _isValid = true
+    } else {
+        _isValid = false
+    }
+ 
+    return _isValid
 }
