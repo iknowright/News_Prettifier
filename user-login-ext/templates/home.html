@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>News Prettifier</title>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+</head>
+<body>
+    <h1>{{.PageTitle}}</h1>
+    <ul>
+        {{range .Todos}} {{if .Done}}
+        <li class="done">{{.Title}}</li>
+        {{else}}
+        <li>{{.Title}}</li>
+        {{end}} {{end}}
+    </ul>
+
+    <a href="/login">login</a>
+</body>
+</html>

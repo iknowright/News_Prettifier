@@ -48,9 +48,12 @@ func (a *App) Run(addr string) {
 }
  
 func (a *App) InitializeRoutes() {
-    a.Router.HandleFunc("/", common.LoginPageHandler) // GET
- 
+	a.Router.HandleFunc("/", common.HomePageHandler) // GET
+	
+	
     a.Router.HandleFunc("/index", common.IndexPageHandler) // GET
+	
+	a.Router.HandleFunc("/login", common.LoginPageHandler).Methods("GET") // GET
     a.Router.HandleFunc("/login", common.LoginHandler).Methods("POST")
  
     a.Router.HandleFunc("/register", common.RegisterPageHandler).Methods("GET")
@@ -59,5 +62,5 @@ func (a *App) InitializeRoutes() {
     a.Router.HandleFunc("/logout", common.LogoutHandler).Methods("POST")
  
     http.Handle("/", a.Router)
-    http.ListenAndServe(":8080", nil)
+    http.ListenAndServe(":8000", nil)
 }

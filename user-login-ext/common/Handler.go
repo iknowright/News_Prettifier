@@ -7,14 +7,41 @@ import (
     helpers "../helpers"
     repos "../repos"
     "github.com/gorilla/securecookie"
+
+    "text/template"
 )
  
 var cookieHandler = securecookie.New(
     securecookie.GenerateRandomKey(64),
     securecookie.GenerateRandomKey(32))
  
+
+type Todo struct {
+    Title string
+    Done  bool
+}
+
+type TodoPageData struct {
+    PageTitle string
+    Todos     []Todo
+}
+
 // Handlers
  
+// for GET
+func HomePageHandler(response http.ResponseWriter, request *http.Request) {
+    data := TodoPageData{
+        PageTitle: "My TODO list",
+        Todos: []Todo{
+            {Title: "Task 1", Done: false},
+            {Title: "Task 2", Done: true},
+            {Title: "Task 3", Done: true},
+        },
+    }
+    tmpl := template.Must(template.ParseFiles("templates/home.html"))
+    tmpl.Execute(response, data)
+}
+
 // for GET
 func LoginPageHandler(response http.ResponseWriter, request *http.Request) {
     var body, _ = helpers.LoadFile("templates/login.html")
