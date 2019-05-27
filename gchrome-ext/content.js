@@ -1,5 +1,5 @@
 // content.js
-var firstHref = $("a[href^='http']").eq(0).attr("href");
+var firstHref = $("h1").text();
 
 console.log(firstHref);
 console.log(firstHref);
