@@ -16,6 +16,7 @@ import (
     "text/template"
     
     "reflect"
+    "encoding/json"
 )
  
 //App struct
@@ -53,7 +54,8 @@ func (a *App) Run(addr string) {
 }
  
 func (a *App) InitializeRoutes() {
-	a.Router.HandleFunc("/", a.HomePageHandler) // GET
+    a.Router.HandleFunc("/{uuid:[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+}", a.HomePageHandler) // GET
+    a.Router.HandleFunc("/", a.HomePageHandler) // GET
 	
 	
     a.Router.HandleFunc("/index", a.IndexPageHandler) // GET
@@ -65,6 +67,9 @@ func (a *App) InitializeRoutes() {
     a.Router.HandleFunc("/register", a.RegisterHandler).Methods("POST")
  
     a.Router.HandleFunc("/logout", a.LogoutHandler).Methods("POST")
+
+    // article post
+    a.Router.HandleFunc("/article", a.createArticle).Methods("POST")
  
     http.Handle("/", a.Router)
     http.ListenAndServe(":8000", nil)
@@ -76,30 +81,34 @@ var cookieHandler = securecookie.New(
     securecookie.GenerateRandomKey(32))
  
 
-type Todo struct {
-    Title string
-    Done  bool
+// Helper function
+
+func respondWithError(w http.ResponseWriter, code int, message string) {
+	respondWithJSON(w, code, map[string]string{"error": message})
 }
 
-type TodoPageData struct {
-    PageTitle string
-    Todos     []Todo
+func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
+	response, _ := json.Marshal(payload)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	w.Write(response)
 }
 
 // Handlers
  
 // for GET
 func (a *App) HomePageHandler(response http.ResponseWriter, request *http.Request) {
-    data := TodoPageData{
-        PageTitle: "My TODO list",
-        Todos: []Todo{
-            {Title: "Task 1", Done: false},
-            {Title: "Task 2", Done: true},
-            {Title: "Task 3", Done: true},
-        },
+    vars := mux.Vars(request)
+    fmt.Println(vars)
+    article := article{
+        Title: "title test",
+        Author: "author test",
+        Content: "content test",
+        Origin: "otigin test",
     }
     tmpl := template.Must(template.ParseFiles("templates/home.html"))
-    tmpl.Execute(response, data)
+    tmpl.Execute(response, article)
 }
 
 // for GET
@@ -260,4 +269,25 @@ func (a *App) UserIsValid(uName, pwd string) bool {
     }
  
     return _isValid
+}
+
+// Handling Article
+
+func (a *App) createArticle(w http.ResponseWriter, r *http.Request) {
+	var n article
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&n); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+    defer r.Body.Close()
+    
+    fmt.Println(n)
+
+	if err := n.createArticle(a.DB); err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	respondWithJSON(w, http.StatusCreated, n)
 }

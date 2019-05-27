@@ -82,3 +82,19 @@ func (u *account) createAccount(db *sql.DB) error {
 		u.Username, u.Password, u.Email).Scan(&u.Username)
 	return err
 }
+
+type article struct {
+	Article_ID  string  `json:"article_id"`
+	Title  string  `json:"title"`
+	Author string  `json:"author"`
+	Content string  `json:"content"`
+	Origin string  `json:"origin"`
+}
+
+func (n *article) createArticle(db *sql.DB) error {
+	// postgres doesn't return the last inserted ID so this is the workaround
+	err := db.QueryRow(
+		"INSERT INTO article(title, author, content, origin) VALUES($1, $2, $3, $4) RETURNING article_id",
+		n.Title, n.Author, n.Content, n.Origin).Scan(&n.Article_ID)
+	return err
+}
