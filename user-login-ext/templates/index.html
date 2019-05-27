@@ -1,8 +1,15 @@
 <div class="log-form">
     <h1>Index</h1>
     <hr>
-    <small>User: %s</small>
+    <small>User: {{ .Owner }}</small>
+    <small>Template: {{ .Template }}</small>
     <form method="post" action="/logout">
         <button type="submit">logout</button>
     </form>
+    <h1>{{.Current_Article.Title}}</h1>
+    <ul>
+        <li>{{.Current_Article.Author}}</li>
+        <li>{{.Current_Article.Content}}</li>
+        <li>{{.Current_Article.Origin}}</li>
+    </ul>
 </div>

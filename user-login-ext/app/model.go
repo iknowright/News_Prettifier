@@ -58,10 +58,11 @@ type account struct {
 	Username  string  `json:"username"`
 	Password  string  `json:"password"`
 	Email string `json:"email"`
-}
+	Template int `json:"template"`
+ }
 
 func (u *account) getAccount(db *sql.DB) error {
-	return db.QueryRow("SELECT username, email FROM account WHERE username=$1", u.Username).Scan(&u.Password, &u.Email)
+	return db.QueryRow("SELECT password, email, template FROM account WHERE username=$1", u.Username).Scan(&u.Password, &u.Email, &u.Template)
 }
 
 func (u *account) updateAccount(db *sql.DB) error {
@@ -89,6 +90,7 @@ type article struct {
 	Author string  `json:"author"`
 	Content string  `json:"content"`
 	Origin string  `json:"origin"`
+	Username string  `json:"username"`
 }
 
 func (n *article) createArticle(db *sql.DB) error {
@@ -96,5 +98,14 @@ func (n *article) createArticle(db *sql.DB) error {
 	err := db.QueryRow(
 		"INSERT INTO article(title, author, content, origin) VALUES($1, $2, $3, $4) RETURNING article_id",
 		n.Title, n.Author, n.Content, n.Origin).Scan(&n.Article_ID)
+	return err
+}
+
+func (n *article) getArticle(db *sql.DB) error {
+	return db.QueryRow("SELECT title, author, content, origin FROM article WHERE article_id=$1", n.Article_ID).Scan(&n.Title, &n.Author, &n.Content, &n.Origin)
+}
+
+func (n *article) updateArticleUser(db *sql.DB) error {
+	_, err := db.Exec("UPDATE article SET username=$1 WHERE article_id=$2", n.Username, n.Article_ID)
 	return err
 }

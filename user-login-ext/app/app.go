@@ -14,8 +14,7 @@ import (
  
 	"github.com/gorilla/securecookie"
     "text/template"
-    
-    "reflect"
+
     "encoding/json"
 )
  
@@ -23,6 +22,13 @@ import (
 type App struct {
 	Router *mux.Router
 	DB     *sql.DB
+}
+
+type login struct {
+    Owner string
+    Template int
+    Article_IDs []string
+    Current_Article article
 }
 
 const (
@@ -54,18 +60,28 @@ func (a *App) Run(addr string) {
 }
  
 func (a *App) InitializeRoutes() {
+    // default page
+
     a.Router.HandleFunc("/{uuid:[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+}", a.HomePageHandler) // GET
     a.Router.HandleFunc("/", a.HomePageHandler) // GET
-	
-	
+    
+    
     a.Router.HandleFunc("/index", a.IndexPageHandler) // GET
-	
-	a.Router.HandleFunc("/login", a.LoginPageHandler).Methods("GET") // GET
-    a.Router.HandleFunc("/login", a.LoginHandler).Methods("POST")
+    a.Router.HandleFunc("/index/{uuid:[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+}", a.IndexPageHandler) // GET
+    
+    // login
+
+    a.Router.HandleFunc("/login/", a.LoginPageHandler).Methods("GET") // GET
+    a.Router.HandleFunc("/login/{uuid:[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+}", a.LoginPageHandler).Methods("GET")
+    a.Router.HandleFunc("/login/", a.LoginHandler).Methods("POST")
+    a.Router.HandleFunc("/login/{uuid:[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+}", a.LoginHandler).Methods("POST")
  
+    // register
+
     a.Router.HandleFunc("/register", a.RegisterPageHandler).Methods("GET")
     a.Router.HandleFunc("/register", a.RegisterHandler).Methods("POST")
  
+    // logout
     a.Router.HandleFunc("/logout", a.LogoutHandler).Methods("POST")
 
     // article post
@@ -101,20 +117,45 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 func (a *App) HomePageHandler(response http.ResponseWriter, request *http.Request) {
     vars := mux.Vars(request)
     fmt.Println(vars)
-    article := article{
-        Title: "title test",
-        Author: "author test",
-        Content: "content test",
-        Origin: "otigin test",
+    n := article{
+        Article_ID: "",
+        Title: "",
+        Author: "",
+        Content: "",
+        Origin: "",
+    }
+    if len(vars) == 0 {
+        fmt.Println("no uuid now");        
+    } else {
+        fmt.Println(vars["uuid"])
+        n.Article_ID = vars["uuid"]
+        if err := n.getArticle(a.DB); err != nil {
+            switch err {
+            case sql.ErrNoRows:
+                fmt.Println("no such article")
+            default:
+                fmt.Println("bad query")
+            }
+        }
+        fmt.Println(n)
     }
     tmpl := template.Must(template.ParseFiles("templates/home.html"))
-    tmpl.Execute(response, article)
+    tmpl.Execute(response, n)
 }
 
 // for GET
 func (a *App) LoginPageHandler(response http.ResponseWriter, request *http.Request) {
-    var body, _ = helpers.LoadFile("templates/login.html")
-    fmt.Fprintf(response, body)
+    n := ""
+    vars := mux.Vars(request)
+    fmt.Println(vars)
+    if len(vars) == 0 {
+        fmt.Println("no uuid now");        
+    } else {
+        fmt.Println(vars["uuid"])
+       n = vars["uuid"]
+    }
+    tmpl := template.Must(template.ParseFiles("templates/login.html"))
+    tmpl.Execute(response, n)
 }
  
 // for POST
@@ -122,13 +163,23 @@ func (a *App) LoginHandler(response http.ResponseWriter, request *http.Request) 
     name := request.FormValue("name")
     pass := request.FormValue("password")
     redirectTarget := "/"
+    n := ""
+    fmt.Println("im in login handler")    
+    vars := mux.Vars(request)
+    fmt.Println(vars)
+    if len(vars) == 0 {
+        fmt.Println("no uuid now, login");
+    } else {
+        fmt.Println(vars["uuid"])
+        n = vars["uuid"]
+    }
     if !helpers.IsEmpty(name) && !helpers.IsEmpty(pass) {
         // Database check for user data!
         _userIsValid := a.UserIsValid(name, pass)
  
         if _userIsValid {
             a.SetCookie(name, response)
-            redirectTarget = "/index"
+            redirectTarget = fmt.Sprintf("/index/%s", n)
         } else {
             redirectTarget = "/register"
         }
@@ -164,14 +215,10 @@ func (a *App) RegisterHandler(w http.ResponseWriter, r *http.Request) {
     _confirmPwd = !helpers.IsEmpty(confirmPwd)
  
     if _uName && _email && _pwd && _confirmPwd {
-        fmt.Fprintln(w, "Username for Register : ", uName)
-        fmt.Fprintln(w, "Username type : ", reflect.TypeOf(uName))        
-        fmt.Fprintln(w, "Email for Register : ", email)
-        fmt.Fprintln(w, "Email type : ", reflect.TypeOf(email))       
-        fmt.Fprintln(w, "Password for Register : ", pwd)
-        fmt.Fprintln(w, "Password type : ", reflect.TypeOf(pwd))       
-        fmt.Fprintln(w, "ConfirmPassword for Register : ", confirmPwd)
-        fmt.Fprintln(w, "ConfirmPassword type : ", reflect.TypeOf(confirmPwd))       
+        fmt.Fprintln(w, "Username for Register : ", uName)    
+        fmt.Fprintln(w, "Email for Register : ", email)     
+        fmt.Fprintln(w, "Password for Register : ", pwd)  
+        fmt.Fprintln(w, "ConfirmPassword for Register : ", confirmPwd)    
         if pwd == confirmPwd {
             n := account{ Username:uName, Password:pwd, Email:email}
             if err := n.createAccount(a.DB); err != nil {
@@ -185,16 +232,60 @@ func (a *App) RegisterHandler(w http.ResponseWriter, r *http.Request) {
     } else {
         fmt.Fprintln(w, "This fields can not be blank!")
     }
-
-
 }
  
 // for GET
 func (a *App) IndexPageHandler(response http.ResponseWriter, request *http.Request) {
     userName := a.GetUserName(request)
     if !helpers.IsEmpty(userName) {
-        var indexBody, _ = helpers.LoadFile("templates/index.html")
-        fmt.Fprintf(response, indexBody, userName)
+        curr_article := article{
+            Article_ID: "",
+            Title: "",
+            Author: "",
+            Content: "",
+            Origin: "",
+        }
+        login_data := login{
+            Owner: "test",
+            Template: 0,
+            Article_IDs: []string{},
+            Current_Article: curr_article,
+        }
+        fmt.Println("im in login handler")    
+        vars := mux.Vars(request)
+        fmt.Println(vars)
+        if len(vars) == 0 {
+            fmt.Println("no uuid now, login");
+        } else {
+            fmt.Println(vars["uuid"])
+            curr_article.Article_ID = vars["uuid"]
+            if err := curr_article.getArticle(a.DB); err != nil {
+                switch err {
+                case sql.ErrNoRows:
+                    fmt.Println("no such article")
+                default:
+                    fmt.Println("bad query")
+                }
+            }
+        }
+        user := account{ Username:userName }
+        if err := user.getAccount(a.DB); err != nil {
+            switch err {
+            case sql.ErrNoRows:
+                fmt.Println("no this user");
+            default:
+                fmt.Println("no this user");
+            }
+        }
+        login_data = login{
+            Owner: userName,
+            Template: user.Template,
+            Article_IDs: []string{},
+            Current_Article: curr_article,
+        }
+        fmt.Println(login_data)
+        tmpl := template.Must(template.ParseFiles("templates/index.html"))
+        tmpl.Execute(response, login_data)
     } else {
         http.Redirect(response, request, "/", 302)
     }
@@ -256,18 +347,17 @@ func (a *App) UserIsValid(uName, pwd string) bool {
 			fmt.Println("no this user");
 		}
 		return false
-	}
-
+    }
 	fmt.Printf("%+v\n", n);
-
-    _uName, _pwd, _isValid := "changchaishi", "1234", false
+    
+    _isValid := false
  
-    if uName == _uName && pwd == _pwd {
+    if uName == n.Username && pwd == n.Password {
         _isValid = true
     } else {
         _isValid = false
     }
- 
+    fmt.Println(_isValid)
     return _isValid
 }
 
