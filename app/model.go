@@ -58,15 +58,16 @@ type account struct {
 	Username  string  `json:"username"`
 	Password  string  `json:"password"`
 	Email string `json:"email"`
-	Template int `json:"template"`
+	Size int `json:"size"`
+	Color int `json:"color"`
  }
 
 func (u *account) getAccount(db *sql.DB) error {
-	return db.QueryRow("SELECT password, email, template FROM account WHERE username=$1", u.Username).Scan(&u.Password, &u.Email, &u.Template)
+	return db.QueryRow("SELECT password, email, size, color FROM account WHERE username=$1", u.Username).Scan(&u.Password, &u.Email, &u.Size, &u.Color)
 }
 
-func (u *account) updateAccount(db *sql.DB) error {
-	_, err := db.Exec("UPDATE account SET password=$1, email=$2 WHERE username=$3", u.Password, u.Email, u.Username)
+func (u *account) updateAccountSettings(db *sql.DB) error {
+	_, err := db.Exec("UPDATE account SET size=$1, color=$2 WHERE username=$3", u.Size, u.Color, u.Username)
 	return err
 }
 
@@ -116,17 +117,15 @@ func getArticles(db *sql.DB, username string) ([]article, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 
 	articles := []article{}
-
 	for rows.Next() {
 		var p article
 		if err := rows.Scan(&p.Article_ID, &p.Title); err != nil {
 			return nil, err
 		}
-		fmt.Printf("%+v\n", p);
+		// fmt.Printf("%+v\n", p);
 		articles = append(articles, p)
 	}
 

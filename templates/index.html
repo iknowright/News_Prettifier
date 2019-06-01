@@ -2,7 +2,13 @@
     <h1>Index</h1>
     <hr>
     <small>User: {{ .Owner }}</small>
-    <small>Template: {{ .Template }}</small>
+    <small>Size: {{ .Size }}</small>
+    <small>Color: {{ .Color }}</small>
+    <select>
+        {{range .Articles}}
+            <option>{{ .Article_ID }}</option>
+        {{end}}
+    </select>
     <form method="post" action="/logout">
         <button type="submit">logout</button>
     </form>

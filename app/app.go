@@ -164,7 +164,6 @@ func (a *App) LoginHandler(response http.ResponseWriter, request *http.Request) 
     if len(vars) != 0  {
         n = vars["uuid"]
     }
-    fmt.Printf("uuid string is%s\n", n)
     if !helpers.IsEmpty(name) && !helpers.IsEmpty(pass) {
         // Database check for user data!
         _userIsValid := a.UserIsValid(name, pass)
@@ -228,7 +227,8 @@ func (a *App) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 type login_data struct {
     Owner string
-    Template int
+    Size int
+    Color int
     Articles []article
     Current_Article article
 }
@@ -267,7 +267,6 @@ func (a *App) IndexPageHandler(response http.ResponseWriter, request *http.Reque
             }
         }
         user_articles, err := getArticles(a.DB, userName)
-        fmt.Printf("%+v\n", user_articles);
         if err != nil {
             fmt.Println("error in get multiple article")
             return
@@ -275,7 +274,8 @@ func (a *App) IndexPageHandler(response http.ResponseWriter, request *http.Reque
 
         loginData := login_data{
             Owner: userName,
-            Template: user.Template,
+            Size: user.Size,
+            Color: user.Color,
             Articles: user_articles,
             Current_Article: curr_article,
         }
@@ -335,6 +335,7 @@ func (a *App) UserIsValid(uName, pwd string) bool {
     // DB simulation
 
     n := account{Username: uName}
+    fmt.Println(uName)
 	if err := n.getAccount(a.DB); err != nil {
 		switch err {
 		case sql.ErrNoRows:
