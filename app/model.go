@@ -109,3 +109,26 @@ func (n *article) updateArticleUser(db *sql.DB) error {
 	_, err := db.Exec("UPDATE article SET username=$1 WHERE article_id=$2", n.Username, n.Article_ID)
 	return err
 }
+
+func getArticles(db *sql.DB, username string) ([]article, error) {
+	fmt.Println(username)
+	rows, err := db.Query("SELECT article_id, title FROM article WHERE username=$1", username)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	articles := []article{}
+
+	for rows.Next() {
+		var p article
+		if err := rows.Scan(&p.Article_ID, &p.Title); err != nil {
+			return nil, err
+		}
+		fmt.Printf("%+v\n", p);
+		articles = append(articles, p)
+	}
+
+	return articles, nil
+}
