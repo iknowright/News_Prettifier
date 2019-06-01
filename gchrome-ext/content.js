@@ -12,6 +12,5 @@ a_json = {
     "author": "the author",
     "content": "the content",
     "origin": " no where",
-    "username": ""
 }
 

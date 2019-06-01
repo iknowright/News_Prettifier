@@ -11,7 +11,7 @@ port.onMessage.addListener(function (msg) {
 var gothtml;
 $(document).ready(function () {
     $(".btn-pretty").on("click", function() {
-        // $.ajax({
+// $.ajax({
         //     url: "http://google.com",
         //     success: function(data){
         //         gothtml = data;  
