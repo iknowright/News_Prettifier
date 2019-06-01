@@ -13,7 +13,8 @@
   ],
   "permissions" : [
     "declarativeContent",
-    "tabs"
+    "tabs",
+    "storage"
   ],
   "page_action": {
     "default_icon": "statics/book.png",
