@@ -135,7 +135,6 @@ func (a *App) HomePageHandler(response http.ResponseWriter, request *http.Reques
                 fmt.Println("bad query")
             }
         }
-        fmt.Println(n)
     }
     tmpl := template.Must(template.ParseFiles("templates/home.html"))
     tmpl.Execute(response, n)
@@ -158,6 +157,8 @@ func (a *App) LoginHandler(response http.ResponseWriter, request *http.Request) 
     fmt.Println("POST login handler")
     name := request.FormValue("name")
     pass := request.FormValue("password")
+    fmt.Println(name)
+    fmt.Println(pass)
     redirectTarget := "/"
     n := ""
     vars := mux.Vars(request)
