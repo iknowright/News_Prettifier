@@ -86,6 +86,9 @@ func (a *App) InitializeRoutes() {
 
     // article post
     a.Router.HandleFunc("/article", a.createArticle).Methods("POST")
+
+    // serve static
+    a.Router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
  
     http.Handle("/", a.Router)
     http.ListenAndServe(":8000", nil)
