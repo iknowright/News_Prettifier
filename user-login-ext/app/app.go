@@ -66,7 +66,7 @@ func (a *App) InitializeRoutes() {
     a.Router.HandleFunc("/", a.HomePageHandler) // GET
     
     
-    a.Router.HandleFunc("/index", a.IndexPageHandler) // GET
+    a.Router.HandleFunc("/index/", a.IndexPageHandler) // GET
     a.Router.HandleFunc("/index/{uuid:[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+}", a.IndexPageHandler) // GET
     
     // login
@@ -115,8 +115,8 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
  
 // for GET
 func (a *App) HomePageHandler(response http.ResponseWriter, request *http.Request) {
+    fmt.Println("GET home login handler")  
     vars := mux.Vars(request)
-    fmt.Println(vars)
     n := article{
         Article_ID: "",
         Title: "",
@@ -124,9 +124,7 @@ func (a *App) HomePageHandler(response http.ResponseWriter, request *http.Reques
         Content: "",
         Origin: "",
     }
-    if len(vars) == 0 {
-        fmt.Println("no uuid now");        
-    } else {
+    if len(vars) != 0 {
         fmt.Println(vars["uuid"])
         n.Article_ID = vars["uuid"]
         if err := n.getArticle(a.DB); err != nil {
@@ -137,7 +135,6 @@ func (a *App) HomePageHandler(response http.ResponseWriter, request *http.Reques
                 fmt.Println("bad query")
             }
         }
-        fmt.Println(n)
     }
     tmpl := template.Must(template.ParseFiles("templates/home.html"))
     tmpl.Execute(response, n)
@@ -145,13 +142,10 @@ func (a *App) HomePageHandler(response http.ResponseWriter, request *http.Reques
 
 // for GET
 func (a *App) LoginPageHandler(response http.ResponseWriter, request *http.Request) {
+    fmt.Println("GET login Page handler")
     n := ""
     vars := mux.Vars(request)
-    fmt.Println(vars)
-    if len(vars) == 0 {
-        fmt.Println("no uuid now");        
-    } else {
-        fmt.Println(vars["uuid"])
+    if len(vars) != 0 {
        n = vars["uuid"]
     }
     tmpl := template.Must(template.ParseFiles("templates/login.html"))
@@ -160,17 +154,15 @@ func (a *App) LoginPageHandler(response http.ResponseWriter, request *http.Reque
  
 // for POST
 func (a *App) LoginHandler(response http.ResponseWriter, request *http.Request) {
+    fmt.Println("POST login handler")
     name := request.FormValue("name")
     pass := request.FormValue("password")
+    fmt.Println(name)
+    fmt.Println(pass)
     redirectTarget := "/"
     n := ""
-    fmt.Println("im in login handler")    
     vars := mux.Vars(request)
-    fmt.Println(vars)
-    if len(vars) == 0 {
-        fmt.Println("no uuid now, login");
-    } else {
-        fmt.Println(vars["uuid"])
+    if len(vars) != 0  {
         n = vars["uuid"]
     }
     if !helpers.IsEmpty(name) && !helpers.IsEmpty(pass) {
@@ -183,6 +175,7 @@ func (a *App) LoginHandler(response http.ResponseWriter, request *http.Request) 
         } else {
             redirectTarget = "/register"
         }
+        fmt.Println(redirectTarget)
     }
     http.Redirect(response, request, redirectTarget, 302)
 }
@@ -224,8 +217,7 @@ func (a *App) RegisterHandler(w http.ResponseWriter, r *http.Request) {
             if err := n.createAccount(a.DB); err != nil {
                 fmt.Println("I'm here with error!")                            
                 return
-            }
-            fmt.Fprintln(w, "I'm here!")            
+            }         
         } else {
             fmt.Fprintln(w, "Password not match!")
         }
@@ -233,7 +225,15 @@ func (a *App) RegisterHandler(w http.ResponseWriter, r *http.Request) {
         fmt.Fprintln(w, "This fields can not be blank!")
     }
 }
- 
+
+type login_data struct {
+    Owner string
+    Size int
+    Color int
+    Articles []article
+    Current_Article article
+}
+
 // for GET
 func (a *App) IndexPageHandler(response http.ResponseWriter, request *http.Request) {
     userName := a.GetUserName(request)
@@ -245,19 +245,9 @@ func (a *App) IndexPageHandler(response http.ResponseWriter, request *http.Reque
             Content: "",
             Origin: "",
         }
-        login_data := login{
-            Owner: "test",
-            Template: 0,
-            Article_IDs: []string{},
-            Current_Article: curr_article,
-        }
         fmt.Println("im in login handler")    
         vars := mux.Vars(request)
-        fmt.Println(vars)
-        if len(vars) == 0 {
-            fmt.Println("no uuid now, login");
-        } else {
-            fmt.Println(vars["uuid"])
+        if len(vars) != 0 {
             curr_article.Article_ID = vars["uuid"]
             if err := curr_article.getArticle(a.DB); err != nil {
                 switch err {
@@ -277,15 +267,22 @@ func (a *App) IndexPageHandler(response http.ResponseWriter, request *http.Reque
                 fmt.Println("no this user");
             }
         }
-        login_data = login{
+        user_articles, err := getArticles(a.DB, userName)
+        if err != nil {
+            fmt.Println("error in get multiple article")
+            return
+        }
+
+        loginData := login_data{
             Owner: userName,
-            Template: user.Template,
-            Article_IDs: []string{},
+            Size: user.Size,
+            Color: user.Color,
+            Articles: user_articles,
             Current_Article: curr_article,
         }
-        fmt.Println(login_data)
+        fmt.Println(loginData)
         tmpl := template.Must(template.ParseFiles("templates/index.html"))
-        tmpl.Execute(response, login_data)
+        tmpl.Execute(response, loginData)
     } else {
         http.Redirect(response, request, "/", 302)
     }
@@ -339,6 +336,7 @@ func (a *App) UserIsValid(uName, pwd string) bool {
     // DB simulation
 
     n := account{Username: uName}
+    fmt.Println(uName)
 	if err := n.getAccount(a.DB); err != nil {
 		switch err {
 		case sql.ErrNoRows:
@@ -349,7 +347,6 @@ func (a *App) UserIsValid(uName, pwd string) bool {
 		return false
     }
 	fmt.Printf("%+v\n", n);
-    
     _isValid := false
  
     if uName == n.Username && pwd == n.Password {
