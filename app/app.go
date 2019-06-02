@@ -82,10 +82,15 @@ func (a *App) InitializeRoutes() {
     a.Router.HandleFunc("/register", a.RegisterHandler).Methods("POST")
  
     // logout
-    a.Router.HandleFunc("/logout", a.LogoutHandler).Methods("POST")
+    a.Router.HandleFunc("/logout/", a.LogoutHandler).Methods("POST")
+    a.Router.HandleFunc("/logout/{uuid:[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+}", a.LogoutHandler).Methods("POST")
+    
 
     // article post
     a.Router.HandleFunc("/article", a.createArticle).Methods("POST")
+
+    // serve static
+    a.Router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
  
     http.Handle("/", a.Router)
     http.ListenAndServe(":8000", nil)
@@ -115,7 +120,7 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
  
 // for GET
 func (a *App) HomePageHandler(response http.ResponseWriter, request *http.Request) {
-    fmt.Println("GET home login handler")  
+    fmt.Println("GET home page handler")  
     vars := mux.Vars(request)
     n := article{
         Article_ID: "",
@@ -236,6 +241,11 @@ type login_data struct {
 
 // for GET
 func (a *App) IndexPageHandler(response http.ResponseWriter, request *http.Request) {
+    vars := mux.Vars(request)
+    redirectTarget := "/"
+    if len(vars) != 0 { 
+        redirectTarget = fmt.Sprintf("/%s", vars["uuid"])        
+    }
     userName := a.GetUserName(request)
     if !helpers.IsEmpty(userName) {
         curr_article := article{
@@ -246,7 +256,6 @@ func (a *App) IndexPageHandler(response http.ResponseWriter, request *http.Reque
             Origin: "",
         }
         fmt.Println("im in login handler")    
-        vars := mux.Vars(request)
         if len(vars) != 0 {
             curr_article.Article_ID = vars["uuid"]
             if err := curr_article.getArticle(a.DB); err != nil {
@@ -284,14 +293,19 @@ func (a *App) IndexPageHandler(response http.ResponseWriter, request *http.Reque
         tmpl := template.Must(template.ParseFiles("templates/index.html"))
         tmpl.Execute(response, loginData)
     } else {
-        http.Redirect(response, request, "/", 302)
+        http.Redirect(response, request, redirectTarget, 302)
     }
 }
  
 // for POST
 func (a *App) LogoutHandler(response http.ResponseWriter, request *http.Request) {
+    vars := mux.Vars(request)
+    redirectTarget := "/"
+    if len(vars) != 0 { 
+        redirectTarget = fmt.Sprintf("/%s", vars["uuid"])        
+    }
     a.ClearCookie(response)
-    http.Redirect(response, request, "/", 302)
+    http.Redirect(response, request, redirectTarget, 302)
 }
  
 // Cookie
