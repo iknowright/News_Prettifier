@@ -6,7 +6,11 @@ var port = chrome.extension.connect({
     name: "Sample Communication"
 });
 
+// var curr_url;
 
+// chrome.tabs.query({'active': true, 'lastFocusedWindow': true}, function (tabs) {
+//     curr_url = tabs[0].url;
+// });
 
 port.postMessage("Hi BackGround");
 chrome.runtime.onMessage.addListener(function (msg) {
@@ -32,7 +36,6 @@ chrome.runtime.onMessage.addListener(function (msg) {
 //         }
 //     });
 // } 
-var activateButton = false;
 
 setInterval(function() {  
     chrome.storage.local.get('content', function(result) {
@@ -42,9 +45,6 @@ setInterval(function() {
             bkg.console.log("BUTTON SHOULD BE ACTIVATED");
             document.getElementById("Button").disabled = false;
             document.getElementById("Button").enabled = true;
-            chrome.storage.local.set({'content': 'unready'}, function() {
-                console.log("-------set the key--------");
-            });
             // document.getElementById("Button").enabled = true;
         }
     });
@@ -57,6 +57,9 @@ $(document).ready(function () {
     $("button").on("click", function() { 
         // document.getElementById("Button").enabled = true;
         port.postMessage("open the tab");
+        // chrome.storage.local.set({'content': 'unready'}, function() {
+        //     console.log("-------set the key--------");
+        // });
         // $.ajax({
         //     url: "http://google.com",
         //     success: function(data){

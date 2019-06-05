@@ -9,11 +9,31 @@ chrome.runtime.onInstalled.addListener(function () {
         // With a new rule ...
         chrome.declarativeContent.onPageChanged.addRules([
             {
-                // That fires when a page's URL contains a 'g' ...
                 conditions: [
+                    // new chrome.declarativeContent.PageStateMatcher({
+                    //     pageUrl: { pathContains: 'g'}
+                    // })
                     new chrome.declarativeContent.PageStateMatcher({
-                        pageUrl: { urlContains: 'g' },
-                    })
+                        pageUrl: { urlMatches: '.+\.cnn\.com/[0-9]+.+' }
+                    }),
+                    new chrome.declarativeContent.PageStateMatcher({
+                        pageUrl: { urlMatches: '.+\.nytimes\.com/[0-9]+.+' }
+                    }),
+                    new chrome.declarativeContent.PageStateMatcher({
+                        pageUrl: { urlMatches: '.+\.sky\.com/story.+' }
+                    }),
+                    new chrome.declarativeContent.PageStateMatcher({
+                        pageUrl: { urlMatches: '.+\.abcnews\.go\.com/(US|International|Politics|Health|Entertainment|Sports|Business|Technology|Lifestyle)/.+' }
+                    }),
+                    new chrome.declarativeContent.PageStateMatcher({
+                        pageUrl: { urlMatches: '.+\.foxnews\.com/(world|opinion|politics|science|us|entertainment|lifestyle|tech|health).+' }
+                    }),
+                    new chrome.declarativeContent.PageStateMatcher({
+                        pageUrl: { urlMatches: '.+\.chinapost\.nownews\.com/[0-9]+-[0-9]+' }
+                    }),
+                    new chrome.declarativeContent.PageStateMatcher({
+                        pageUrl: { urlMatches: '.+\.taipeitimes\.com/News.+' }
+                    }),
                 ],
                 // And shows the extension's page action.
                 actions: [new chrome.declarativeContent.ShowPageAction()]
@@ -21,6 +41,14 @@ chrome.runtime.onInstalled.addListener(function () {
         ]);
     });
 });
+
+// var curr_url;
+chrome.tabs.query({ active: true, currentWindow: true },(tabs) => {
+    var currentTab = tabs[0];
+    var curr_url = currentTab.url;
+    console.log("CURR_URL: " + curr_url);
+});
+
 
 chrome.extension.onConnect.addListener(function(port) {
     console.log("Connected .....");
@@ -30,8 +58,11 @@ chrome.extension.onConnect.addListener(function(port) {
             var currentTab = tabs[0];
             port.postMessage(currentTab.url);
         });
-        if(msg === "open the tab") {
-            chrome.tabs.create({"url": "https://1d94f0af.ngrok.io/" + article_id});
+        if(msg.action === "open the tab") {
+            // console.log(curr_url);
+            // if(curr_url === msg.url) {
+            chrome.tabs.create({"url": "https://news-prettifier.herokuapp.com/index/" + article_id});
+            // }
         }
     });
 })
@@ -44,13 +75,21 @@ chrome.runtime.onMessage.addListener(function(msg) {
     //     chrome.runtime.sendMessage("CONTENT_READY");
     // }
     // else {
+    // var curr_url;
+    // chrome.tabs.query({ active: true, currentWindow: true },(tabs) => {
+    //     var currentTab = tabs[0];
+    //     curr_url = currentTab.url;
+    // });
+    console.log(msg.origin);
+    console.log(curr_url);
+    if(msg.origin == curr_url) {
         request = $.ajax({
-            url: "https://1d94f0af.ngrok.io/article",
+            url: "https://news-prettifier.herokuapp.com/article",
             type: 'POST',
             dataType: 'json',
             contentType: 'application/json',
             success: function (data) {
-                console.log("Content: " + data);
+                console.log("Content: " + JSON.stringify(data));
                 article_id = data.article_id;
                 console.log("Article ID: " + article_id);
             },
@@ -62,6 +101,9 @@ chrome.runtime.onMessage.addListener(function(msg) {
             chrome.storage.local.set({'content': 'ready'}, function() {
                 console.log("-------set the key--------");
             });
+            chrome.storage.local.set({'repeated': 'true'}, function() {
+                console.log("-------set the key--------");
+            });
         });
         request.fail(function (jqXHR, textStatus, errorThrown){
             // Log the error to the console
@@ -71,6 +113,7 @@ chrome.runtime.onMessage.addListener(function(msg) {
             );
             console.warn(jqXHR.responseText);
         });
+    }
     // }
 });
 
