@@ -10,12 +10,25 @@ if (hostname == "edition.cnn.com") {
 	title = $("h1.pg-headline").text();
 	author = $("span.metadata__byline__author").text();
 	
-	content = content.concat("<p>", $("p.zn-body__paragraph:not(.zn-body__footer)").text(), "</p>");
-	$("div.zn-body__paragraph").each(function () {
-		if ($(this).children("h3").get(0) != null) {
-			content = content.concat("<h3>", $(this).text(), "</h3>");
-		} else {
+	$("section.zn-body-text > div.l-container").children().each(function () {
+		if ($(this)[0].className == "el__leafmedia el__leafmedia--sourced-paragraph") {
 			content = content.concat("<p>", $(this).text(), "</p>");
+		} else if ($(this)[0].className == "zn-body__paragraph speakable") {
+			content = content.concat("<p>", $(this).text(), "</p>");
+		}
+	});
+	$("div.zn-body__read-all").children().each(function () {
+		if ($(this)[0].className == "zn-body__paragraph") {
+			if ($(this).children("h3").get(0) != null) {
+				content = content.concat("<br/><h4>", $(this).text(), "</h4><br/>");
+			} else {
+				content = content.concat("<p>", $(this).text(), "</p>");
+			}
+		} else if ($(this)[0].className == "el__embedded el__embedded--fullwidth") {
+			content = content.concat("<br/><div style=\"width:500px; word-wrap:break-word; font-size:80%;\">");
+			content = content.concat("<img src=\"", $(this).children("div").children("div").children("img").attr("src"), "\"");
+			content = content.concat(" width=500px style=\"padding-bottom:0.5em;\" /><br/>");
+			content = content.concat($(this).children("div").children("div").children("div.media__caption").text(), "</div><br/>");
 		}
 	});
 	if ($("p.zn-body__footer").text() != "") {
@@ -33,9 +46,11 @@ if (hostname == "www.nytimes.com") {
 	}
 	$("div.css-53u6y8").children().each(function () {
 		if ($(this)[0].className == "css-18icg9x evys1bk0") {
-			content = content.concat("<p>", $(this).text(), "</p>");
+			if ($(this).children("a.css-1g7m0tk").get(0) == null) {
+				content = content.concat("<p>", $(this).text(), "</p>");
+			}
 		} else if ($(this)[0].className == "css-ani50b eoo0vm40") {
-			content = content.concat("<h2>", $(this).text(), "</h2>");
+			content = content.concat("<br/><h4>", $(this).text(), "</h4><br/>");
 		}
 	});
 	if (document.querySelector("div.css-1yif149") != null) {
@@ -47,7 +62,7 @@ if (hostname == "www.nytimes.com") {
 if (hostname == "news.sky.com") {
 	title = $("h1.sdc-site-component-header--h1").text().trim();
 	author = "";
-	content = content.concat("<h2>", $("h2.sdc-site-component-header--h2").text(), "</h2>");
+	content = content.concat("<br/><h4>", $("h2.sdc-site-component-header--h2").text(), "</h4><br/>");
 	$("div.sdc-article-body > p").each(function () {
 		content = content.concat("<p>", $(this).text(), "</p>");
 	});
@@ -75,41 +90,30 @@ if (hostname == "abcnews.go.com") {
 		}
 	});
 	
-	$("div.article-copy > p").each(function () {
-		if ($(this).children("em").get(0) != null) {
-			content = content.concat("<p><em>", $(this).text(), "</em></p>");
-		} else {
-			if ($(this).children("strong").get(0) == null) {
-				var str = $(this).text();
-				if (str[0] == "\n") {
-					str = str.substring(1, str.length);
+	$("div.article-copy").children().each(function () {
+		if ($(this)[0].tagName == "P") {
+			if ($(this).children("em").get(0) != null) {
+				content = content.concat("<p><em>", $(this).text(), "</em></p>");
+			} else {
+				if ($(this).children("strong").get(0) == null) {
+					var str = $(this).text();
+					if (str[0] == "\n") {
+						str = str.substring(1, str.length);
+					}
+					if (str[str.length-1] == "\n") {
+						str = str.substring(0, str.length-1);
+					}
+					content = content.concat("<p>", str, "</p>");
 				}
-				if (str[str.length-1] == "\n") {
-					str = str.substring(0, str.length-1);
-				}
-				content = content.concat("<p>", str, "</p>");
 			}
+		} else if ($(this)[0].tagName == "FIGURE") {
+			content = content.concat("<br/><div style=\"width:500px; word-wrap:break-word; font-size:80%;\">");
+			content = content.concat("<img src=\"", $(this).children("div").children("picture").children("img").attr("src"), "\"");
+			content = content.concat(" width=500px style=\"padding-bottom:0.5em;\" /><br/>");
+			content = content.concat($(this).children("figcaption").children("span").text(), "</div><br/>");
 		}
 	});
 }
-
-/* Fox News *//*
-if (hostname == "www.foxnews.com") {
-	title = $("h1.headline").text();
-	
-	author = "By ";
-	$("div.author-byline > span > span").each(function () {
-		author = author.concat($(this).text());
-	});
-	
-	$("div.article-body > p").each(function () {
-		if ($(this).children("i").get(0) != null || $(this).children("em").get(0) != null) {
-			content = content.concat("<p><i>", $(this).text(), "</i></p>");
-		} else if ($(this).children("strong").get(0) == null && $(this).children("a").children("strong").get(0) == null) {
-			content = content.concat("<p>", $(this).text(), "</p>");
-		}
-	});
-}*/
 
 /* Fox News */
 if (hostname == "www.foxnews.com") {
@@ -128,8 +132,11 @@ if (hostname == "www.foxnews.com") {
 				content = content.concat("<p>", $(this).text(), "</p>");
 			}
 		} else if ($(this)[0].className == "image-ct inline") {
+			content = content.concat("<br/><div style=\"width:500px; word-wrap:break-word; font-size:80%;\">");
 			content = content.concat("<img src=\"", $(this).children("div").children("picture").children("img").attr("src"), "\"");
-			content = content.concat(" alt=\"", $(this).children("div").children("picture").children("img").attr("alt"), "\">");
+			content = content.concat(" width=500px style=\"padding-bottom:0.5em;\" /><br/>");
+			content = content.concat($(this).children("div.caption").text(), "</div><br/>");
+
 		}
 	});
 }

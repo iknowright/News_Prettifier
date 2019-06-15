@@ -6,11 +6,7 @@ var port = chrome.extension.connect({
     name: "Sample Communication"
 });
 
-// var curr_url;
 
-// chrome.tabs.query({'active': true, 'lastFocusedWindow': true}, function (tabs) {
-//     curr_url = tabs[0].url;
-// });
 
 port.postMessage("Hi BackGround");
 chrome.runtime.onMessage.addListener(function (msg) {

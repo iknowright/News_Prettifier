@@ -42,14 +42,6 @@ chrome.runtime.onInstalled.addListener(function () {
     });
 });
 
-// var curr_url;
-chrome.tabs.query({ active: true, currentWindow: true },(tabs) => {
-    var currentTab = tabs[0];
-    var curr_url = currentTab.url;
-    console.log("CURR_URL: " + curr_url);
-});
-
-
 chrome.extension.onConnect.addListener(function(port) {
     console.log("Connected .....");
     port.onMessage.addListener(function(msg) {
@@ -58,11 +50,8 @@ chrome.extension.onConnect.addListener(function(port) {
             var currentTab = tabs[0];
             port.postMessage(currentTab.url);
         });
-        if(msg.action === "open the tab") {
-            // console.log(curr_url);
-            // if(curr_url === msg.url) {
+        if(msg === "open the tab") {
             chrome.tabs.create({"url": "https://news-prettifier.herokuapp.com/index/" + article_id});
-            // }
         }
     });
 })
@@ -75,14 +64,6 @@ chrome.runtime.onMessage.addListener(function(msg) {
     //     chrome.runtime.sendMessage("CONTENT_READY");
     // }
     // else {
-    // var curr_url;
-    // chrome.tabs.query({ active: true, currentWindow: true },(tabs) => {
-    //     var currentTab = tabs[0];
-    //     curr_url = currentTab.url;
-    // });
-    console.log(msg.origin);
-    console.log(curr_url);
-    if(msg.origin == curr_url) {
         request = $.ajax({
             url: "https://news-prettifier.herokuapp.com/article",
             type: 'POST',
@@ -113,7 +94,6 @@ chrome.runtime.onMessage.addListener(function(msg) {
             );
             console.warn(jqXHR.responseText);
         });
-    }
     // }
 });
 
